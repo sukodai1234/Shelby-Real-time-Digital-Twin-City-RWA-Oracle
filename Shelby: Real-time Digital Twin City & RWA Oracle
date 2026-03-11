@@ -65,6 +65,86 @@ for m in materials:
     deg = shelby.ai_predict_degradation(m)
     print(f" - Vật liệu {m}: Bào mòn {deg}% sau 10 năm do hơi muối.")
 
+
+
+
+
+import time
+import random
+
+class ShelbyEnvironmentalOracle:
+    """Giả lập kết nối tới các cảm biến IoT thực tế tại địa phương"""
+    def get_live_data(self):
+        return {
+            "pm25": random.uniform(15, 80),      # Bụi mịn (ug/m3)
+            "oxygen_level": random.uniform(19, 21), # % Oxy trong không khí
+            "noise_db": random.uniform(40, 95),   # Độ ồn (dB)
+            "salt_density": random.uniform(0.1, 5.0), # Nồng độ muối (mg/m2/day)
+            "timestamp": time.time()
+        }
+
+class ShelbyAIEngine:
+    def __init__(self, environmental_data):
+        self.data = environmental_data
+
+    def analyze_livability(self):
+        """Tính toán chỉ số sống dựa trên các ngưỡng khoa học"""
+        score = 100
+        
+        # 1. Phạt điểm Bụi mịn (Ngưỡng an toàn WHO < 25)
+        if self.data['pm25'] > 25:
+            score -= (self.data['pm25'] - 25) * 0.8
+            
+        # 2. Phạt điểm Oxy (Ngưỡng sinh tồn lý tưởng ~20.9%)
+        if self.data['oxygen_level'] < 20.5:
+            score -= (20.9 - self.data['oxygen_level']) * 20
+            
+        # 3. Phạt điểm Tiếng ồn (Ngưỡng gây stress > 70dB)
+        if self.data['noise_db'] > 70:
+            score -= (self.data['noise_db'] - 70) * 0.5
+
+        return max(0, round(score, 2))
+
+    def structural_health_forecast(self, material="Steel"):
+        """Dự báo tốc độ ăn mòn dựa trên nồng độ muối"""
+        # Công thức ăn mòn thép carbon trung bình: d = k * t^n
+        # Ở đây ta giản lược để thấy tác động của Salt Density
+        salt = self.data['salt_density']
+        years = 5
+        
+        if material == "Steel":
+            impact = (salt * 0.15) * years * 10 # Giả lập tỷ lệ % rỉ sét
+        else: # Vật liệu cao cấp
+            impact = (salt * 0.02) * years
+            
+        return round(impact, 2)
+
+# --- TRIỂN KHAI HỆ THỐNG THỜI GIAN THỰC ---
+
+oracle = ShelbyEnvironmentalOracle()
+print(f"--- ĐANG KẾT NỐI VỚI HỆ THỐNG CẢM BIẾN ĐỊA PHƯƠNG ---")
+
+# Giả lập vòng lặp cập nhật mỗi giây (Per-second State Update)
+for i in range(3):
+    raw_data = oracle.get_live_data()
+    ai_logic = ShelbyAIEngine(raw_data)
+    
+    livability = ai_logic.analyze_livability()
+    corrosion = ai_logic.structural_health_forecast("Steel")
+    
+    print(f"\n[Cập nhật lúc: {time.ctime(raw_data['timestamp'])}]")
+    print(f">> Chỉ số môi trường: PM2.5: {raw_data['pm25']:.1f} | Oxy: {raw_data['oxygen_level']:.2f}% | Ồn: {raw_data['noise_db']:.1f}dB")
+    print(f">> Nồng độ muối: {raw_data['salt_density']:.2f} mg/m2/day")
+    
+    # Logic RWA: Nếu Livability Score giảm quá thấp, Smart Contract có thể tự động 
+    # kích hoạt các lệnh bảo hiểm hoặc điều chỉnh giá trị tài sản on-chain.
+    print(f"[*] LIVABILITY SCORE (RWA Value): {livability}/100")
+    print(f"[*] DỰ BÁO ĂN MÒN (5 NĂM): {corrosion}% bề mặt vật liệu")
+    
+    if livability < 50:
+        print("⚠️ CẢNH BÁO: Môi trường hiện tại ảnh hưởng xấu đến sức khỏe & giá trị tài sản!")
+    
+    time.sleep(1) # Chờ 1 giây cho lần cập nhật tiếp theo
 print(f"\n3. Kích hoạt Smart Contract mua vật liệu:")
 # Giả sử bạn đặt lệnh mua khi giá thép giảm xuống 15,600đ
 order = shelby.reactive_smart_contract(target_price=15600, amount_tons=50)
