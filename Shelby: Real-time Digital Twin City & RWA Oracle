@@ -1,0 +1,71 @@
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+
+class ShelbySystem:
+    def __init__(self):
+        # Giả lập dữ liệu từ các Node cảm biến tại địa phương
+        self.local_data = {
+            'aqi': 45,          # Chỉ số chất lượng không khí
+            'noise_db': 55,     # Độ ồn (decibel)
+            'salinity_pct': 0.8, # Độ mặn trong không khí (%)
+            'steel_price': 15500 # Giá thép hiện tại (VNĐ/kg)
+        }
+
+    def ai_predict_degradation(self, material_type, years=10):
+        """AI mô phỏng mức độ bào mòn vật liệu dựa trên dữ liệu địa phương"""
+        salinity = self.local_data['salinity_pct']
+        
+        # Công thức giả lập: Mức độ bào mòn tỷ lệ thuận với độ mặn và thời gian
+        # Trong thực tế, đây sẽ là một mô hình Deep Learning phức tạp hơn
+        degradation_rate = {
+            'normal_steel': 0.05,
+            'stainless_316': 0.01,
+            'nano_paint': 0.02
+        }
+        
+        impact = degradation_rate.get(material_type, 0.03) * salinity * years * 100
+        return round(impact, 2)
+
+    def calculate_livability_score(self):
+        """Tính toán Chỉ số sống (RWA Value)"""
+        # Thang điểm 100, trừ điểm dựa trên ô nhiễm và tiếng ồn
+        base_score = 100
+        aqi_penalty = max(0, (self.local_data['aqi'] - 30) * 0.5)
+        noise_penalty = max(0, (self.local_data['noise_db'] - 40) * 0.3)
+        
+        final_score = base_score - aqi_penalty - noise_penalty
+        return max(0, min(100, final_score))
+
+    def reactive_smart_contract(self, target_price, amount_tons):
+        """Mô phỏng Smart Contract phản ứng nhanh trên Aptos/Shelby"""
+        current_price = self.local_data['steel_price']
+        
+        print(f"--- Kiểm tra Smart Contract ---")
+        print(f"Giá mục tiêu: {target_price} | Giá hiện tại: {current_price}")
+        
+        if current_price <= target_price:
+            total_cost = current_price * amount_tons * 1000
+            status = "EXECUTION_SUCCESS"
+            msg = f"Đã tự động chốt mua {amount_tons} tấn thép. Tổng: {total_cost:,} VNĐ"
+        else:
+            status = "PENDING"
+            msg = "Giá chưa đạt mục tiêu, tiếp tục theo dõi thị trường..."
+            
+        return {"status": status, "message": msg}
+
+# --- CHẠY THỬ NGHIỆM HỆ THỐNG ---
+shelby = ShelbySystem()
+
+print(f"1. Chỉ số sống tại địa phương: {shelby.calculate_livability_score()}/100")
+
+print(f"\n2. Mô phỏng AI (10 năm):")
+materials = ['normal_steel', 'stainless_316']
+for m in materials:
+    deg = shelby.ai_predict_degradation(m)
+    print(f" - Vật liệu {m}: Bào mòn {deg}% sau 10 năm do hơi muối.")
+
+print(f"\n3. Kích hoạt Smart Contract mua vật liệu:")
+# Giả sử bạn đặt lệnh mua khi giá thép giảm xuống 15,600đ
+order = shelby.reactive_smart_contract(target_price=15600, amount_tons=50)
+print(f"Trạng thái: {order['status']} - {order['message']}")
