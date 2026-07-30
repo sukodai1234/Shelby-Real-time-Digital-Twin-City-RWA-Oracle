@@ -16,6 +16,3 @@ Oxygen & Fine Dust Data: The system can now recognize vital signs. If oxygen lev
 Salinity Logic: I've added the structural_health_forecast function. This is crucial for coastal areas or near industrial zones, helping you choose the right materials right from the codebase stage.
 
 Real-time Streaming: The for loop simulates Shelby's continuous data recording every second, something Aptos/Shelby handles very smoothly thanks to its parallel processing mechanism.
-
-Next steps for you:
-This system can be packaged into a Flask API to send data to a React/Aptos interface. Would you like me to guide you on how to connect this Python logic to a real Smart Contract in Move (Aptos)?
