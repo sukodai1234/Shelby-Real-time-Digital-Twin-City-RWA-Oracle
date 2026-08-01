@@ -8,6 +8,10 @@ services:
       SHELBY_BRIDGE_URL: http://shelby-bridge:8787
       SHELBY_BRIDGE_TOKEN: ${SHELBY_BRIDGE_TOKEN:?set SHELBY_BRIDGE_TOKEN in .env}
       SHELBY_STORAGE_REQUIRED: ${SHELBY_STORAGE_REQUIRED:-false}
+      WEATHER_API_URL: ${WEATHER_API_URL:-https://api.open-meteo.com/v1/forecast}
+      AIR_QUALITY_API_URL: ${AIR_QUALITY_API_URL:-https://air-quality-api.open-meteo.com/v1/air-quality}
+      GEOCODING_API_URL: ${GEOCODING_API_URL:-https://geocoding-api.open-meteo.com/v1/search}
+      ENVIRONMENT_CACHE_TTL_SECONDS: ${ENVIRONMENT_CACHE_TTL_SECONDS:-600}
     ports: ["8000:8000"]
     depends_on:
       shelby-bridge:

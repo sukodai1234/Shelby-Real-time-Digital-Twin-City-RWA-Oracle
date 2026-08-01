@@ -24,6 +24,10 @@ class Settings:
     shelby_blob_ttl_seconds: int = 30 * 24 * 60 * 60
     outbound_timeout_seconds: float = 15.0
     max_cached_assets: int = 1_000
+    weather_api_url: str = "https://api.open-meteo.com/v1/forecast"
+    air_quality_api_url: str = "https://air-quality-api.open-meteo.com/v1/air-quality"
+    geocoding_api_url: str = "https://geocoding-api.open-meteo.com/v1/search"
+    environment_cache_ttl_seconds: int = 600
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -54,6 +58,16 @@ class Settings:
             shelby_blob_ttl_seconds=int(os.getenv("SHELBY_BLOB_TTL_SECONDS", str(30 * 24 * 60 * 60))),
             outbound_timeout_seconds=float(os.getenv("OUTBOUND_TIMEOUT_SECONDS", "15")),
             max_cached_assets=int(os.getenv("MAX_CACHED_ASSETS", "1000")),
+            weather_api_url=os.getenv(
+                "WEATHER_API_URL", "https://api.open-meteo.com/v1/forecast"
+            ),
+            air_quality_api_url=os.getenv(
+                "AIR_QUALITY_API_URL", "https://air-quality-api.open-meteo.com/v1/air-quality"
+            ),
+            geocoding_api_url=os.getenv(
+                "GEOCODING_API_URL", "https://geocoding-api.open-meteo.com/v1/search"
+            ),
+            environment_cache_ttl_seconds=int(os.getenv("ENVIRONMENT_CACHE_TTL_SECONDS", "600")),
         )
         settings.validate()
         return settings
@@ -65,6 +79,8 @@ class Settings:
             raise ValueError("SHELBY_BLOB_TTL_SECONDS must be positive")
         if self.max_cached_assets <= 0:
             raise ValueError("MAX_CACHED_ASSETS must be positive")
+        if self.environment_cache_ttl_seconds <= 0:
+            raise ValueError("ENVIRONMENT_CACHE_TTL_SECONDS must be positive")
         if self.shelby_bridge_url and not self.shelby_bridge_token:
             raise ValueError("SHELBY_BRIDGE_TOKEN is required when SHELBY_BRIDGE_URL is configured")
         if self.shelby_storage_required and not self.shelby_bridge_url:

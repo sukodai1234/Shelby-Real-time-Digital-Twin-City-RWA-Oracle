@@ -7,13 +7,15 @@ from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
 
-from fastapi import FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi import FastAPI, Header, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from .config import Settings
 from .engine import SensorReading, evaluate_twin
-from .models import IngestResponse, SensorReadingRequest
+from .environment import EnvironmentService, EnvironmentSourceError
+from .location_fit import calculate_location_fit
+from .models import IngestResponse, LocationFitRequest, SensorReadingRequest
 from .security import SignatureError, SignatureVerifier, canonical_json
 from .state import OracleState
 from .storage import ShelbyStorage, ShelbyStorageError, StorageReceipt
@@ -49,9 +51,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             resolved.signature_max_age_seconds,
             resolved.require_sensor_signatures,
         )
+        app.state.environment = EnvironmentService(
+            weather_url=resolved.weather_api_url,
+            air_quality_url=resolved.air_quality_api_url,
+            geocoding_url=resolved.geocoding_api_url,
+            timeout_seconds=resolved.outbound_timeout_seconds,
+            cache_ttl_seconds=resolved.environment_cache_ttl_seconds,
+        )
         yield
 
-    app = FastAPI(title="Shelby Real-time Digital Twin & RWA Oracle", version="2.0.0", lifespan=lifespan)
+    app = FastAPI(title="Shelby Real-time Digital Twin & RWA Oracle", version="2.1.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(resolved.cors_origins),
@@ -69,13 +78,59 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {
             "status": "ok",
             "service": "shelby-rwa-oracle",
-            "version": "2.0.0",
+            "version": "2.1.0",
             "shelby_storage": "configured" if app.state.storage.enabled else "disabled",
+            "environmental_data": "configured",
         }
 
     @app.post("/api/v1/evaluate")
     async def evaluate(payload: SensorReadingRequest) -> dict:
         return {"reading": payload.model_dump(), "snapshot": evaluate_twin(payload.to_domain()).to_dict()}
+
+    @app.get("/api/v1/environment/current")
+    async def current_environment(
+        latitude: float = Query(ge=-90, le=90),
+        longitude: float = Query(ge=-180, le=180),
+    ) -> dict:
+        try:
+            return await app.state.environment.current(latitude, longitude)
+        except EnvironmentSourceError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    @app.get("/api/v1/environment/locations")
+    async def search_environment_locations(
+        query: str = Query(min_length=2, max_length=100),
+        count: int = Query(default=5, ge=1, le=10),
+        language: str = Query(default="en", pattern="^(en|vi|zh)$"),
+    ) -> dict:
+        try:
+            return {"results": await app.state.environment.search(query, count, language)}
+        except EnvironmentSourceError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    @app.post("/api/v1/location-fit")
+    async def location_fit(payload: LocationFitRequest) -> dict:
+        try:
+            environment = await app.state.environment.current(payload.latitude, payload.longitude)
+        except EnvironmentSourceError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+        housing = payload.housing.model_dump() if payload.housing else None
+        climate = payload.climate.model_dump() if payload.climate else None
+        result = {
+            "location": {"latitude": payload.latitude, "longitude": payload.longitude},
+            "biosensory": environment["biosensory"],
+            "environment_risk": environment["risk"],
+            "location_fit": calculate_location_fit(
+                biosensory_risk_score=environment["biosensory"]["score"],
+                housing=housing,
+                climate_resilience_score=climate["score"] if climate else None,
+            ),
+            "housing_evidence": housing,
+            "climate_evidence": climate,
+            "environment_integrity": environment["integrity"],
+        }
+        result["integrity_sha256"] = hashlib.sha256(canonical_json(result)).hexdigest()
+        return result
 
     @app.post(
         "/api/v1/assets/{asset_id}/readings",
