@@ -1,0 +1,22 @@
+{
+  "name": "shelby-rwa-storage-bridge",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/server.js",
+    "test": "node --import tsx --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@aptos-labs/ts-sdk": "5.2.1",
+    "@shelby-protocol/sdk": "0.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.1.0",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2"
+  }
+}

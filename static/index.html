@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Shelby RWA Digital Twin</title>
+  <style>
+    :root{font-family:Inter,system-ui,sans-serif;color:#eaf2ff;background:#06101d}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#12345a 0,transparent 35%),#06101d}.wrap{max-width:1120px;margin:auto;padding:36px 24px}.hero{display:flex;justify-content:space-between;align-items:center;gap:24px}.eyebrow{color:#66e3be;font-weight:800;letter-spacing:.14em;text-transform:uppercase}.badge{padding:9px 13px;border:1px solid #315172;border-radius:999px;background:#0c1b2b}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:16px;margin-top:20px}.card{background:#0b1a2b;border:1px solid #1e3b5d;border-radius:18px;padding:20px;box-shadow:0 18px 50px #0005}.value{font-size:34px;font-weight:850;margin-top:8px}.muted{color:#8ea9c8}.LOW{color:#55d995}.MEDIUM{color:#ffd166}.HIGH{color:#ff9566}.CRITICAL{color:#ff5d73}.alert{background:#271925;border-left:4px solid #ff6b7a;padding:12px;margin:8px 0;border-radius:8px}.footer{margin-top:28px;color:#7892b0;font-size:14px}code{color:#91d8ff}h1{font-size:clamp(2rem,5vw,4rem);line-height:1;margin:.25em 0}.proof{word-break:break-all;font-family:monospace;font-size:13px}@media(max-width:650px){.hero{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body><main class="wrap">
+  <div class="hero"><div><div class="eyebrow">Shelby × Aptos</div><h1>Real-time RWA Digital Twin</h1><p class="muted">Verifiable coastal-property risk, health and maintenance intelligence.</p></div><div class="badge" id="connection">Connecting…</div></div>
+  <section class="grid">
+    <div class="card"><div class="muted">Livability</div><div class="value" id="livability">—</div></div>
+    <div class="card"><div class="muted">Structural health</div><div class="value" id="structural">—</div></div>
+    <div class="card"><div class="muted">Risk</div><div class="value" id="risk">—</div></div>
+    <div class="card"><div class="muted">Corrosion horizon</div><div class="value" id="horizon">—</div></div>
+  </section>
+  <section class="grid">
+    <div class="card"><div class="muted">Temperature</div><div class="value" id="temperature">—</div></div>
+    <div class="card"><div class="muted">Humidity</div><div class="value" id="humidity">—</div></div>
+    <div class="card"><div class="muted">PM2.5</div><div class="value" id="pm25">—</div></div>
+    <div class="card"><div class="muted">Salinity</div><div class="value" id="salinity">—</div></div>
+  </section>
+  <section class="card" style="margin-top:20px"><h2>Reactive alerts</h2><div id="alerts" class="muted">No alerts</div></section>
+  <div class="footer">Ingest: <code>POST /api/v1/assets/{asset_id}/readings</code> · Live: <code>/ws/assets/{asset_id}</code> · Docs: <code>/docs</code></div>
+</main>
+<script>
+const ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws/demo`),el=id=>document.getElementById(id);
+ws.onopen=()=>el('connection').textContent='● Live demo'; ws.onclose=()=>el('connection').textContent='Disconnected';
+ws.onmessage=e=>{const d=JSON.parse(e.data),r=d.reading,s=d.snapshot;
+el('livability').textContent=s.livability_score;el('structural').textContent=s.structural_health_score;
+el('risk').textContent=s.risk_level;el('risk').className=`value ${s.risk_level}`;el('horizon').textContent=`${s.corrosion_horizon_days}d`;
+el('temperature').textContent=`${r.temperature_c}°C`;el('humidity').textContent=`${r.humidity_pct}%`;el('pm25').textContent=r.pm25_ug_m3;el('salinity').textContent=`${r.salinity_ppt} ppt`;
+el('alerts').innerHTML=s.alerts.length?s.alerts.map(x=>`<div class="alert"></div>`).map((x,i)=>x.replace('</div>',`${s.alerts[i]}</div>`)).join(''):'<span class="muted">No alerts</span>';};
+</script></body></html>

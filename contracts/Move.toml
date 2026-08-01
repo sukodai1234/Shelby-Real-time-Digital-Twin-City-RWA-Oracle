@@ -1,0 +1,9 @@
+[package]
+name = "ShelbyRWA"
+version = "2.0.0"
+
+[addresses]
+shelby_rwa = "0x42"
+
+[dependencies]
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework", rev = "fde503186ef74658abd2c66532a8602eca33a20d" }
