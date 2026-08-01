@@ -37,3 +37,16 @@ def test_invalid_asset_id_is_rejected() -> None:
     with TestClient(app) as client:
         response = client.post("/api/v1/assets/not%20safe/readings", json=READING)
     assert response.status_code == 422
+
+
+def test_dashboard_declares_resilient_environment_loading() -> None:
+    app = create_app(Settings())
+    with TestClient(app) as client:
+        response = client.get("/")
+    assert response.status_code == 200
+    page = response.text
+    assert "Promise.allSettled" in page
+    assert "Ho Chi Minh City reference location" in page
+    assert "CACHE_TTL_MS=6*60*60*1000" in page
+    assert "LOCAL DATA FINGERPRINT" in page
+    assert "NOT ON-CHAIN" in page
