@@ -1,0 +1,29 @@
+services:
+  oracle:
+    build: .
+    environment:
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8000}
+      REQUIRE_SENSOR_SIGNATURES: ${REQUIRE_SENSOR_SIGNATURES:-false}
+      SENSOR_SECRETS_JSON: ${SENSOR_SECRETS_JSON:-{}}
+      SHELBY_BRIDGE_URL: http://shelby-bridge:8787
+      SHELBY_BRIDGE_TOKEN: ${SHELBY_BRIDGE_TOKEN:?set SHELBY_BRIDGE_TOKEN in .env}
+      SHELBY_STORAGE_REQUIRED: ${SHELBY_STORAGE_REQUIRED:-false}
+    ports: ["8000:8000"]
+    depends_on:
+      shelby-bridge:
+        condition: service_healthy
+    restart: unless-stopped
+  shelby-bridge:
+    build: ./shelby-bridge
+    environment:
+      BRIDGE_AUTH_TOKEN: ${SHELBY_BRIDGE_TOKEN:?set SHELBY_BRIDGE_TOKEN in .env}
+      SHELBY_API_KEY: ${SHELBY_API_KEY:?set SHELBY_API_KEY in .env}
+      SHELBY_ACCOUNT_PRIVATE_KEY: ${SHELBY_ACCOUNT_PRIVATE_KEY:?set SHELBY_ACCOUNT_PRIVATE_KEY in .env}
+      PORT: 8787
+    expose: ["8787"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r=>{if(!r.ok)process.exit(1)})"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
