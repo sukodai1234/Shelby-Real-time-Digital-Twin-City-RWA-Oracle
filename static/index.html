@@ -60,7 +60,7 @@ async function loadEnvironment(location=DEFAULT_LOCATION){
   const fresh=weatherLive||airLive;
   if(fresh)saveEnvironment(data);
   const ages=[data.weather&&data.weatherSavedAt,data.air&&data.airSavedAt].filter(Boolean);
-  if(data.weather||data.air)renderEnvironment(data,{liveSources:Number(weatherLive)+Number(airLive),usesCache:(!weatherLive&&Boolean(previous.weather))||(!airLive&&Boolean(previous.air)),timestamp:ages.length?Math.min(...ages):previous.savedAt,stale:!fresh});
+  if(data.weather||data.air)renderEnvironment(data,{liveSources:Number(weatherLive)+Number(airLive),usesCache:(!weatherLive&&Boolean(previous.weather))||(!airLive&&Boolean(previous.air)),timestamp:ages.length?Math.min(...ages):previous.savedAt,stale:!fresh&&!previous.savedAt});
   else renderEnvironment({location},{liveSources:0,usesCache:false,stale:true,timestamp:Date.now()});
 }
 function requestGps(){if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(position=>{
