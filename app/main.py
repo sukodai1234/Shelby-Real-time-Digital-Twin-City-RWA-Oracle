@@ -7,10 +7,12 @@ from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
+from .climate import ClimateWatchService
 from .config import Settings
 from .engine import SensorReading, evaluate_twin
 from .models import IngestResponse, SensorReadingRequest
@@ -49,6 +51,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             resolved.signature_max_age_seconds,
             resolved.require_sensor_signatures,
         )
+        app.state.climate = ClimateWatchService(resolved.outbound_timeout_seconds)
         yield
 
     app = FastAPI(title="Shelby Real-time Digital Twin & RWA Oracle", version="2.0.0", lifespan=lifespan)
@@ -72,6 +75,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "version": "2.0.0",
             "shelby_storage": "configured" if app.state.storage.enabled else "disabled",
         }
+
+    @app.get("/api/v1/climate-watch")
+    async def climate_watch(latitude: float, longitude: float) -> dict:
+        if not -90 <= latitude <= 90 or not -180 <= longitude <= 180:
+            raise HTTPException(status_code=422, detail="latitude must be -90..90 and longitude must be -180..180")
+        try:
+            return await app.state.climate.get(latitude, longitude)
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=503, detail="Climate Watch data providers are temporarily unavailable") from exc
 
     @app.post("/api/v1/evaluate")
     async def evaluate(payload: SensorReadingRequest) -> dict:
