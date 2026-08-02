@@ -12,6 +12,8 @@ risk scores, immutable JSON evidence on Shelby, and compact verification anchors
 - Internal Node.js bridge using the official `@shelby-protocol/sdk` 0.4.1 on Shelbynet
 - Aptos Move multi-asset registry with owner-controlled oracle rotation and Shelby proof anchoring
 - Non-root containers, health checks, bounded in-memory state, CI, and unit/API tests
+- Climate Watch 2026–2027: lazy-loaded Open-Meteo/ECMWF seasonal outlooks, 1991–2020 anomalies,
+  hot-and-dry signals, nearby NASA EONET wildfires, six-hour cache, and English/Vietnamese/Chinese UI
 
 ## Data flow
 
